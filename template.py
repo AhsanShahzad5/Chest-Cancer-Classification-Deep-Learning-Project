@@ -36,7 +36,7 @@ list_of_files = [
 ]
 
 for filepath in list_of_files:
-    filepath = Path(filepath)
+    filepath = Path(filepath)    # helps us resolve path related issues in windows
     filedir, filename = os.path.split(filepath)
 
 

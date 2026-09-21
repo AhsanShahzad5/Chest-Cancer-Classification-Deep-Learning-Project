@@ -1,0 +1,108 @@
+# ==========================================
+# 1. Virtual Environments & uv
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+# Note: DO NOT ignore `uv.lock`. Commit `uv.lock` for reproducible builds.
+
+# ==========================================
+# 2. Python Bytecode & Cache
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# 3. Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+secrets.yaml
+config/secrets.yaml
+*.pem
+*.key
+
+# ==========================================
+# 4. Machine Learning Data, Models & Artifacts
+# ==========================================
+data/
+artifacts/
+models/
+uploads/
+*.h5
+*.pkl
+*.pb
+*.onnx
+*.pt
+*.pth
+*.tflite
+*.joblib
+
+# ==========================================
+# 5. Logs & Experiment Tracking
+# ==========================================
+logs/
+*.log
+mlruns/
+.dvc/cache/
+.dvc/tmp/
+.dvc/plots/
+catboost_info/
+wandb/
+
+# ==========================================
+# 6. Testing, Jupyter & Tooling Cache
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# ==========================================
+# 7. IDE & Editor Files
+# ==========================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# 8. Operating System Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

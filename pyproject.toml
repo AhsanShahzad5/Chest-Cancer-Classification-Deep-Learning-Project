@@ -25,3 +25,10 @@ dependencies = [
     "types-pyyaml>=6.0.12.20260906",
     "uvicorn>=0.53.0",
 ]
+
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cnnClassifier"

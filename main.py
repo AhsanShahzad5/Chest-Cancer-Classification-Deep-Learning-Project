@@ -1,6 +1,3 @@
-def main():
-    print("Hello from chest-cancer-classification-end-to-end-project!")
+from cnnClassifier import logger
 
-
-if __name__ == "__main__":
-    main()
+logger.info("Starting the project named chest cancer classification")

@@ -1,0 +1,11 @@
+# whenever we are generating something , we call it Artifact
+# And the path of that artifact is stored in artifacts_root
+
+artifacts_root: artifacts
+
+# STAGE 1 
+data_ingestion:
+  root_dir: artifacts/data_ingestion
+  source_URL: https://drive.google.com/file/d/1N927NnbsuBOOBmK4VrTnA1Ya04QB1G3t/view?usp=sharing
+  local_data_file: artifacts/data_ingestion/data.zip
+  unzip_dir: artifacts/data_ingestion

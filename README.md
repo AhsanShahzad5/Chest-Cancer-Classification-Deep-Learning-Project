@@ -10,10 +10,9 @@ we follow these steps in our Architecture , starting with data injestion we foll
 4. Update the entity
 5. Update the configuration manager in src config
 6. Update the components
-7. Update the pipeline 
+7. Update the pipeline
 8. Update the main.py
 9. Update the dvc.yaml
-
 
 ## Easier more clear explanation
 
@@ -31,8 +30,7 @@ When you combine this architecture with orchestration tools like **DVC** (Data V
 
 If parameters in params.yaml change, **DVC** automatically detects which pipeline stage needs to re-run.
 
-**MLflow** logs the parameters parsed by your *ConfigurationManager* directly to an experiment tracking dashboard.
-
+**MLflow** logs the parameters parsed by your _ConfigurationManager_ directly to an experiment tracking dashboard.
 
 ### HOW It Works (Step-by-Step Workflow)
 
@@ -40,11 +38,9 @@ If parameters in params.yaml change, **DVC** automatically detects which pipelin
 
 You write human-readable paths and URLs in YAML:
 
-
 **Step 2: Define the Data Schema (entity/config_entity.py)**
 
 You define an immutable, strongly-typed Dataclass to enforce structure
-
 
 **Step 3: Build the Factory (config/configuration.py)**
 
@@ -54,10 +50,22 @@ The Configuration Manager pattern acts as the bridge between your raw, unstructu
 
 Instead of having every script open YAML files and parse dictionaries manually, the ConfigurationManager centralizes config parsing, validates data types, handles side effects (like creating artifact directories), and provides strongly typed objects to your pipeline components.
 
-**Step 5: Orchestrate in the Pipeline** 
+**Step 5: Orchestrate in the Pipeline**
 
 The pipeline runner ties all pieces together cleanly
 
 **Step 6: Run the Pipeline**
 
 Execute the entry point (main.py) to run the entire workflow end-to-end
+
+# FOR DVC
+
+setup in project once
+`dvc init`
+
+runs pipeline once , if no changes , stages aren't run again n again , if change occurs that particular stage runs
+`dvc repro`
+
+see the pipeline graph
+
+`dvc dag`

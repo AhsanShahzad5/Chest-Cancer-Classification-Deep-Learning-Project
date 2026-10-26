@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chest Cancer Classifier</title>
+  <style>
+    :root {
+      --red: #c62828;
+      --red-dark: #8e0000;
+      --red-light: #ffebee;
+      --text: #222;
+      --muted: #666;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #fafafa;
+      color: var(--text);
+    }
+    header {
+      background: var(--red);
+      color: #fff;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 1.6rem; }
+    header p { margin: 6px 0 0; opacity: 0.85; font-size: 0.95rem; }
+    main {
+      max-width: 520px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+    }
+    .dropzone {
+      border: 2px dashed var(--red);
+      border-radius: 10px;
+      background: var(--red-light);
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+      color: var(--red-dark);
+    }
+    .dropzone.dragover { background: #ffcdd2; }
+    .dropzone img { max-width: 100%; max-height: 320px; display: block; }
+    input[type="file"] { display: none; }
+    .buttons { display: flex; gap: 12px; margin-top: 20px; }
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .primary { background: var(--red); color: #fff; }
+    .primary:hover { background: var(--red-dark); }
+    .secondary { background: #fff; color: var(--red); border: 2px solid var(--red); }
+    .secondary:hover { background: var(--red-light); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result.cancer { background: var(--red-light); color: var(--red-dark); border: 1px solid var(--red); }
+    .result.normal { background: #e8f5e9; color: #1b5e20; border: 1px solid #66bb6a; }
+    .result.info { background: #f5f5f5; color: var(--muted); }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chest Cancer Classifier</h1>
+    <p>Upload a chest CT scan to check for Adenocarcinoma</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <label class="dropzone" id="dropzone" for="file">
+        <span id="placeholder">Click or drop a CT scan image here<br><small>JPG or PNG</small></span>
+      </label>
+      <input type="file" id="file" accept="image/png, image/jpeg">
+
+      <div class="buttons">
+        <button class="primary" id="predictBtn" disabled>Predict</button>
+        <button class="secondary" id="trainBtn">Train Model</button>
+      </div>
+
+      <div class="result" id="result"></div>
+    </div>
+  </main>
+
+  <footer>For learning purposes only, not a medical diagnosis.</footer>
+
+  <script>
+    const fileInput = document.getElementById("file");
+    const dropzone = document.getElementById("dropzone");
+    const predictBtn = document.getElementById("predictBtn");
+    const trainBtn = document.getElementById("trainBtn");
+    const resultBox = document.getElementById("result");
+    let selectedFile = null;
+
+    function showResult(text, kind) {
+      resultBox.textContent = text;
+      resultBox.className = "result show " + kind;
+    }
+
+    function setFile(file) {
+      if (!file || !["image/png", "image/jpeg"].includes(file.type)) {
+        showResult("Please choose a JPG or PNG image.", "info");
+        return;
+      }
+      selectedFile = file;
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.alt = "Selected CT scan";
+      dropzone.replaceChildren(img);
+      predictBtn.disabled = false;
+      resultBox.className = "result";
+    }
+
+    fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      setFile(e.dataTransfer.files[0]);
+    });
+
+    predictBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+      const form = new FormData();
+      form.append("file", selectedFile);
+
+      predictBtn.disabled = true;
+      showResult("Analyzing...", "info");
+      try {
+        const res = await fetch("/predict", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Prediction failed");
+        const label = data[0].image;
+        showResult(label, label === "Normal" ? "normal" : "cancer");
+      } catch (err) {
+        showResult("Error: " + err.message, "info");
+      } finally {
+        predictBtn.disabled = false;
+      }
+    });
+
+    trainBtn.addEventListener("click", async () => {
+      trainBtn.disabled = true;
+      trainBtn.textContent = "Training...";
+      showResult("Training started. This can take several minutes.", "info");
+      try {
+        const res = await fetch("/train", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Training failed");
+        showResult(data.message, "info");
+      } catch (err) {
+        showResult("Error: " + err.message, "info");
+      } finally {
+        trainBtn.disabled = false;
+        trainBtn.textContent = "Train Model";
+      }
+    });
+  </script>
+</body>
+</html>

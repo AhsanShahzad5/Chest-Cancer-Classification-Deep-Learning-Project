@@ -1,0 +1,4 @@
+[core]
+    remote = origin
+['remote "origin"']
+    url = https://dagshub.com/mlenthusiast0/Chest-Cancer-Classification-Deep-Learning-Project.dvc

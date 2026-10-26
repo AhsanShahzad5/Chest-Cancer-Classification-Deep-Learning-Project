@@ -16,11 +16,14 @@ dependencies = [
     "notebook>=7.6.2",
     "numpy>=2.4.6",
     "pandas>=3.0.5",
+    "pillow>=12.3.0",
     "python-box>=7.4.1",
+    "python-dotenv>=1.2.3",
     "python-multipart>=0.0.32",
     "pyyaml>=6.0.3",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
+    "slowapi>=0.1.10",
     "tensorflow>=2.21.0",
     "tqdm>=4.70.1",
     "types-pyyaml>=6.0.12.20260906",
@@ -37,6 +40,7 @@ module-name = "cnnClassifier"
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "pre-commit>=4.7.0",
     "pytest>=9.1.1",
     "ruff>=0.17.2",
 ]

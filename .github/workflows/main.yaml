@@ -117,7 +117,7 @@ jobs:
         run: |
           # The app downloads the model at startup, so give it up to ~2.5 minutes.
           for i in $(seq 1 30); do
-            if curl -fs http://localhost:8000/health; then
+            if curl -fs http://localhost:8000/ready; then
               echo ""
               echo "App is up"
               exit 0

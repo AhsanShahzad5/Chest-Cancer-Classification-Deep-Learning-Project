@@ -1,34 +1,25 @@
-import os
-
-import keras
 import numpy as np
 from keras.applications.vgg16 import preprocess_input
-from keras.models import load_model
 from keras.preprocessing import image
+
+from cnnClassifier.constants import CLASS_NAMES
 
 
 class PredictionPipeline:
-    def __init__(self, filename):
-        self.filename = filename
+    """Turns an image file into a label and a confidence score. It receives an
+    already-loaded model, so it never touches the disk or MLflow to get one."""
 
-    def predict(self):
-        ## load model
+    def __init__(self, model):
+        self.model = model
 
-        # model = load_model(os.path.join("artifacts","training", "model.h5"))
-        model: keras.Model = load_model(os.path.join("model", "model.h5"))  # type: ignore[assignment]
-
-        imagename = self.filename
-        test_image = image.load_img(imagename, target_size=(224, 224))
-        test_image = image.img_to_array(test_image)
-        test_image = np.expand_dims(test_image, axis=0)
+    def predict(self, image_path: str) -> dict:
+        img = image.load_img(image_path, target_size=(224, 224))
+        batch = np.expand_dims(image.img_to_array(img), axis=0)
         # same preprocessing as training, otherwise predictions are unreliable
-        test_image = preprocess_input(test_image)
-        result = np.argmax(model.predict(test_image), axis=1)
-        print(result)
-
-        if result[0] == 1:
-            prediction = "Normal"
-            return [{"image": prediction}]
-        else:
-            prediction = "Adenocarcinoma Cancer"
-            return [{"image": prediction}]
+        batch = preprocess_input(batch)
+        probabilities = self.model.predict(batch)[0]
+        class_index = int(np.argmax(probabilities))
+        return {
+            "prediction": CLASS_NAMES[class_index],
+            "confidence": round(float(probabilities[class_index]), 4),
+        }

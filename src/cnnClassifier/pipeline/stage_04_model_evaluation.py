@@ -13,11 +13,11 @@ class EvaluationPipeline:
         config = ConfigurationManager()
         eval_config = config.get_evaluation_config()
         evaluation = Evaluation(eval_config)
-        evaluation.evaluation()
-        evaluation.save_score()
+        evaluation.evaluation()  # scores the model and writes scores.json
 
-        # needed in training
-        # evaluation.log_into_mlflow()
+        # log params + metrics and register the model as a new "VGG16Model" version.
+        # Serving only changes when someone moves the "champion" alias to it.
+        evaluation.log_into_mlflow()
 
 
 if __name__ == "__main__":

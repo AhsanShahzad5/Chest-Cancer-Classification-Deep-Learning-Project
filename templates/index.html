@@ -80,6 +80,7 @@
     .result.cancer { background: var(--red-light); color: var(--red-dark); border: 1px solid var(--red); }
     .result.normal { background: #e8f5e9; color: #1b5e20; border: 1px solid #66bb6a; }
     .result.info { background: #f5f5f5; color: var(--muted); }
+    .result .detail { display: block; margin-top: 6px; font-size: 0.85rem; font-weight: 400; opacity: 0.85; }
     footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin: 24px 0; }
   </style>
 </head>
@@ -113,8 +114,14 @@
     const resultBox = document.getElementById("result");
     let selectedFile = null;
 
-    function showResult(text, kind) {
-      resultBox.textContent = text;
+    function showResult(text, kind, detail) {
+      resultBox.replaceChildren(document.createTextNode(text));
+      if (detail) {
+        const small = document.createElement("small");
+        small.className = "detail";
+        small.textContent = detail;
+        resultBox.appendChild(small);
+      }
       resultBox.className = "result show " + kind;
     }
 
@@ -154,10 +161,15 @@
       showResult("Analyzing...", "info");
       try {
         const res = await fetch("/predict", { method: "POST", body: form });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.detail || "Prediction failed");
-        const label = data[0].image;
-        showResult(label, label === "Normal" ? "normal" : "cancer");
+        const percent = (data.confidence * 100).toFixed(1);
+        const version = data.model_version ? " · model v" + data.model_version : "";
+        showResult(
+          data.prediction,
+          data.prediction === "Normal" ? "normal" : "cancer",
+          percent + "% confidence" + version
+        );
       } catch (err) {
         showResult("Error: " + err.message, "info");
       } finally {

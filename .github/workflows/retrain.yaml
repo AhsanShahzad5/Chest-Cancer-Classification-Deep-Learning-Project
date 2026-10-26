@@ -1,0 +1,92 @@
+name: Retrain model
+
+# Runs the DVC pipeline on GitHub's machine and registers the result in MLflow as a
+# NEW model version. It never touches the live app: serving only changes when a
+# human moves the "champion" alias in MLflow and restarts the container.
+on:
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: "Retrain even if code, data and params are unchanged"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 3 * * 1" # every Monday at 03:00 UTC; does nothing if nothing changed
+
+permissions:
+  contents: read
+
+# Never run two retraining jobs at once.
+concurrency:
+  group: retrain
+  cancel-in-progress: false
+
+jobs:
+  retrain:
+    name: Retrain and register a new model version
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      # used by the evaluation stage (MLflow) and, below, by the DVC remote
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+      MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+      FORCE_RETRAIN: ${{ inputs.force_retrain }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Give DVC the DagsHub credentials
+        # The remote URL is in .dvc/config (committed). Credentials are not,
+        # so they go into .dvc/config.local, which only exists on this runner.
+        run: |
+          uv run dvc remote modify --local origin auth basic
+          uv run dvc remote modify --local origin user "$MLFLOW_TRACKING_USERNAME"
+          uv run dvc remote modify --local origin password "$MLFLOW_TRACKING_PASSWORD"
+
+      - name: Pull data and earlier results from the DVC remote
+        # --allow-missing: don't fail if the remote doesn't have everything yet
+        run: uv run dvc pull --allow-missing
+
+      - name: Retrain
+        run: |
+          if [ "$FORCE_RETRAIN" = "true" ]; then
+            echo "Forced retrain: re-running the training stage"
+            uv run dvc repro --force --single-item training
+          fi
+          # runs only the stages whose code, data or params changed
+          uv run dvc repro
+
+      - name: Push new data and results to the DVC remote
+        run: uv run dvc push
+
+      - name: Write summary
+        run: |
+          {
+            echo "## Retraining finished"
+            echo ""
+            echo "Latest metrics (test set):"
+            echo '```'
+            uv run dvc metrics show
+            echo '```'
+            echo ""
+            echo "If the evaluation stage ran, a new **VGG16Model** version was registered in MLflow."
+            echo "Compare it with the current one there. To promote it, move the \`champion\` alias to it and restart the container."
+            echo "Download the \`dvc-lock\` artifact below and commit it so the repo matches this run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep dvc.lock and scores.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: dvc-lock
+          path: |
+            dvc.lock
+            scores.json

@@ -53,3 +53,7 @@ ignore = [
     "N815",    # source_URL field name is used across config files
     "TRY003",  # long messages inside exceptions are fine here
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]   # lets tests import app.py from the project root

@@ -7,11 +7,11 @@ WORKDIR /app
 
 # install dependencies first, so this layer is cached when only code changes
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-install-project --no-cache
+RUN uv sync --frozen --no-dev --no-install-project --no-cache
 
 # copy the code (and model/model.h5), then install the project itself
 COPY . .
-RUN uv sync --frozen --no-cache
+RUN uv sync --frozen --no-dev --no-cache
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \

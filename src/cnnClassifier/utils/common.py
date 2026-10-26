@@ -1,22 +1,22 @@
 import json
-import yaml
 from pathlib import Path
-from typing import Any
+
+import yaml
 from box import ConfigBox
 from box.exceptions import BoxValueError
+
 from cnnClassifier import logger
+
 
 def read_yaml(path_to_yaml: Path) -> ConfigBox:
     """Reads a YAML file and returns a dot-accessible ConfigBox."""
     try:
-        with open(path_to_yaml, "r", encoding="utf-8") as yaml_file:
+        with open(path_to_yaml, encoding="utf-8") as yaml_file:
             content = yaml.safe_load(yaml_file)
             logger.info(f"YAML file loaded successfully from: {path_to_yaml}")
             return ConfigBox(content)
-    except BoxValueError:
-        raise ValueError("YAML file is empty")
-    except Exception as e:
-        raise e
+    except BoxValueError as e:
+        raise ValueError("YAML file is empty") from e
 
 def create_directories(path_to_directories: list[Path | str], verbose: bool = True):
     """Creates a list of directories if they do not exist."""
@@ -35,7 +35,7 @@ def save_json(path: Path, data: dict):
 
 def load_json(path: Path) -> ConfigBox:
     """Loads JSON file data into a ConfigBox."""
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         content = json.load(f)
     logger.info(f"JSON file loaded successfully from: {path}")
     return ConfigBox(content)

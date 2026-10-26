@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Annotated
 
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -71,7 +72,7 @@ def train():
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(file: Annotated[UploadFile, File()]):
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="Upload a JPG or PNG image")
     if not SERVING_MODEL_PATH.exists():

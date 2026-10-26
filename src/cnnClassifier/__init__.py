@@ -1,9 +1,9 @@
 # here we create the custom LOGGER 
 # we create it inside the src folder constructor file , which makes it easy to use 
 
+import logging
 import os
 import sys
-import logging
 
 logging_str = "[%(asctime)s: %(levelname)s: %(module)s: %(message)s]"
 

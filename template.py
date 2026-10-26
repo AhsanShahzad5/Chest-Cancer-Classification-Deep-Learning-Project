@@ -3,9 +3,9 @@
 # AND WE CAN RUN THIS FILE USING THE COMMAND: python template.py
 # THEN IT WILL CREATE THE FOLDER STRUCTURE
 
+import logging
 import os
 from pathlib import Path
-import logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,7 +46,6 @@ for filepath in list_of_files:
 
     if (not os.path.exists(filepath)) or (os.path.getsize(filepath) == 0):
         with open(filepath, "w") as f:
-            pass
             logging.info(f"Creating empty file: {filepath}")
 
 

@@ -33,3 +33,23 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "cnnClassifier"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+[tool.ruff]
+# notebooks and the one-time scaffold script are not production code
+extend-exclude = ["research", "template.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "TRY", "N", "C4"]
+ignore = [
+    "E501",    # long lines
+    "N999",    # package is named cnnClassifier (renaming would touch every import)
+    "N815",    # source_URL field name is used across config files
+    "TRY003",  # long messages inside exceptions are fine here
+]

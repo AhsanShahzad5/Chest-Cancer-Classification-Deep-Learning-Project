@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
-from cnnClassifier.constants import *
+from cnnClassifier.constants import CONFIG_FILE_PATH, PARAMS_FILE_PATH
 from cnnClassifier.entity.config_entity import (
     DataIngestionConfig,
     EvaluationConfig,

@@ -1,0 +1,133 @@
+name: CI/CD - Chest Cancer Classifier
+
+# Runs on every push to main (docs-only changes skipped),
+# and can also be started by hand from the Actions tab.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "research/**"
+  workflow_dispatch:
+
+# The workflow only needs to read the repo.
+permissions:
+  contents: read
+
+# Never run two deploys at the same time; a newer push waits for the older one.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  # ---------- Job 1: Continuous Integration ----------
+  integration:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint with ruff
+        run: uv run ruff check .
+
+      - name: Run tests
+        run: uv run pytest -q
+
+  # ---------- Job 2: Continuous Delivery (build + push image) ----------
+  build-and-push:
+    name: Build and push image to ECR
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}
+        run: |
+          # Two tags: the commit SHA (exact version, used for deploy and rollback)
+          # and "latest" (handy for manual runs).
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+  # ---------- Job 3: Continuous Deployment (runs ON the EC2 server) ----------
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: self-hosted
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull new image and restart container
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+        run: |
+          docker pull "$IMAGE"
+
+          # Remove the old container if it exists (tutorial had this commented out,
+          # which breaks every deploy after the first one).
+          docker rm -f chest-cancer-app || true
+
+          # "-e NAME" with no value copies NAME from this step's env,
+          # so secret values never appear in the command line or logs.
+          docker run -d \
+            --name chest-cancer-app \
+            --restart unless-stopped \
+            -p 8000:8000 \
+            -e MLFLOW_TRACKING_URI \
+            -e MLFLOW_TRACKING_USERNAME \
+            -e MLFLOW_TRACKING_PASSWORD \
+            "$IMAGE"
+
+      - name: Health check
+        run: |
+          # The app downloads the model at startup, so give it up to ~2.5 minutes.
+          for i in $(seq 1 30); do
+            if curl -fs http://localhost:8000/health; then
+              echo ""
+              echo "App is up"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "App did not become healthy. Last logs:"
+          docker logs --tail 100 chest-cancer-app
+          exit 1
+
+      - name: Remove old images to free disk space
+        if: always()
+        run: docker image prune -af

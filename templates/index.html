@@ -66,8 +66,6 @@
     }
     .primary { background: var(--red); color: #fff; }
     .primary:hover { background: var(--red-dark); }
-    .secondary { background: #fff; color: var(--red); border: 2px solid var(--red); }
-    .secondary:hover { background: var(--red-light); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     .result {
       margin-top: 20px;
@@ -100,7 +98,6 @@
 
       <div class="buttons">
         <button class="primary" id="predictBtn" disabled>Predict</button>
-        <button class="secondary" id="trainBtn">Train Model</button>
       </div>
 
       <div class="result" id="result"></div>
@@ -113,7 +110,6 @@
     const fileInput = document.getElementById("file");
     const dropzone = document.getElementById("dropzone");
     const predictBtn = document.getElementById("predictBtn");
-    const trainBtn = document.getElementById("trainBtn");
     const resultBox = document.getElementById("result");
     let selectedFile = null;
 
@@ -166,23 +162,6 @@
         showResult("Error: " + err.message, "info");
       } finally {
         predictBtn.disabled = false;
-      }
-    });
-
-    trainBtn.addEventListener("click", async () => {
-      trainBtn.disabled = true;
-      trainBtn.textContent = "Training...";
-      showResult("Training started. This can take several minutes.", "info");
-      try {
-        const res = await fetch("/train", { method: "POST" });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "Training failed");
-        showResult(data.message, "info");
-      } catch (err) {
-        showResult("Error: " + err.message, "info");
-      } finally {
-        trainBtn.disabled = false;
-        trainBtn.textContent = "Train Model";
       }
     });
   </script>

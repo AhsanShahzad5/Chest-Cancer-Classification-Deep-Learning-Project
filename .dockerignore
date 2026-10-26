@@ -1,0 +1,11 @@
+# keep secrets, local envs and training outputs out of the image
+.env
+.venv
+.git
+.dvc/cache
+artifacts
+logs
+mlruns
+research
+**/__pycache__
+*.pyc

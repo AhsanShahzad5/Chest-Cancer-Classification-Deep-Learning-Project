@@ -15,7 +15,9 @@ class EvaluationPipeline:
         evaluation = Evaluation(eval_config)
         evaluation.evaluation()
         evaluation.save_score()
-        evaluation.log_into_mlflow()
+
+        # needed in training
+        # evaluation.log_into_mlflow()
 
 
 if __name__ == "__main__":
